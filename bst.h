@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
 #include "node.h"
 
 using std::cout;
@@ -27,7 +28,7 @@ public:
     bst<data_type>& operator=(const bst<data_type> &other);
 
     size_t &root();
-//    const size_t& root () const;
+        const size_t& root () const;
 
     TRAVERSAL_TYPE& traversal();
     const TRAVERSAL_TYPE& traversal() const;
@@ -37,7 +38,7 @@ public:
 
     void clear();
 
-    bool balanced() const;
+    bool balanced();
     void balance();
 
     vector<node<data_type> >& thevector ();
@@ -56,7 +57,7 @@ public:
     friend
     ostream& operator<<(ostream& outs, const bst<D> &b);
 
-    void print(ostream &outs, size_t r);
+    void print(ostream &outs, size_t r, size_t depth = 0);
 
 
 private:
@@ -67,9 +68,17 @@ private:
     bool removeHELPER (size_t& r, const data_type &d, size_t s);
     bool removeMAX (size_t& r, data_type &d, size_t &s);
 
-    void deallocate (size_t index);
+    void deallocate (size_t &r, size_t index);
 
     size_t &findparent(size_t index);
+
+    int depth(size_t r);
+
+    void tree_to_vine (size_t &root, int &size );
+    void vine_to_tree ( size_t &root, int size );
+    int FullSize ( int size );
+    void compression ( size_t &root, int count );
+
 };
 
 template <typename data_type>
@@ -107,14 +116,14 @@ bst<data_type>& bst<data_type>::operator=(const bst<data_type> &other)
 template <typename data_type>
 size_t &bst<data_type>::root ()
 {
-    return thetree[0].child(0);
+    return thetree[0].child(1);
 }
 
-//template <typename data_type>
-//const size_t& bst<data_type>::root () const
-//{
-//    return thetree[0].child(0);
-//}
+template <typename data_type>
+const size_t& bst<data_type>::root () const
+{
+    return thetree[0].child(1);
+}
 
 template <typename data_type>
 TRAVERSAL_TYPE& bst<data_type>::traversal()
@@ -156,55 +165,44 @@ vector<node<data_type> >& bst<data_type>::thevector()
 template <typename data_type>
 void bst<data_type>::insert(const data_type &d, size_t s)
 {
-
-    insertHELPER(thetree[0].child(0), d, s);
-
-//    if (root() == 0)
-//    {
-//        thetree.push_back(node<data_type> (d,s));
-//        root() = thetree.size() - 1;
-//        return;
-//    }
-
+    insertHELPER(thetree[0].child(1), d, s);
 }
 
 template <typename data_type>
 void bst<data_type>::insertHELPER (size_t &r, const data_type &d, size_t s)
 {
-    cout<<"R = "<<r<<endl;
-    if (r == 0)
-    {
-        cout<<"r = "<<r<<endl;
-        thetree.push_back(node<data_type> (d, s));
-        r = (thetree.size() - 1);
-        cout<<"r = "<<r<<endl;
-    }
-    else
+    if (r)
     {
         if (thetree[r] == d)
             thetree[r] += s;
         else
         {
-            cout<<"Moving to " <<thetree[r].child( thetree[r] < d )<<endl;
             insertHELPER( thetree[r].child( thetree[r] < d ) , d, s );
         }
+    }
+    else
+    {
+        r = thetree.size();
+        thetree.push_back(node<data_type> (d, s));
     }
 }
 
 template <typename data_type>
-void bst<data_type>::deallocate (size_t index)
+void bst<data_type>::deallocate (size_t &r,size_t index)
 {
-    size_t end = thetree.size()  - 1, parent = root();
-    if (index == end)
-    {
-        thetree.pop_back();
-        return;
-    }
-    while (parent && thetree[parent].child((DIRECTION)(thetree[parent] < thetree[end])) != end)
-        parent = thetree[parent].child((DIRECTION)(thetree[parent] < thetree[end]));
-    thetree[index] = thetree[end];
-    thetree[parent].child((DIRECTION)(thetree[parent] < thetree[end])) = index;
-    thetree.pop_back();
+        if (r == thetree.size() - 1)
+        {
+            if (index != thetree.size() - 1)
+            {
+                thetree[index] = thetree[r];
+                r = index;
+            }
+            thetree.pop_back();
+        }
+        else
+        {
+            deallocate(thetree[r].child(thetree[r] < (thetree[thetree.size() - 1])), index);
+        }
 }
 
 template <typename data_type>
@@ -218,7 +216,10 @@ bool bst<data_type>::removeMAX (size_t& r, data_type &d, size_t &s)
         s = thetree[r].count();
         size_t dlt = r;
         r = thetree[r].child(0);
-        deallocate(dlt);
+        if (dlt != thetree.size() -1 )
+            deallocate(root(), dlt);
+        else
+            thetree.pop_back();
         return true;
     }
 }
@@ -240,13 +241,18 @@ bool bst<data_type>::removeHELPER (size_t& r, const data_type &d, size_t s)
                 {
                     size_t temp = r;
                     r = thetree[r].child(1);
-                    deallocate(temp);
+                    if (temp != thetree.size() -1)
+                        deallocate(root(),temp);
+                    else
+                        thetree.pop_back();
                     return true;
                 }
                 else
                 {
                     return removeMAX(thetree[r].child(0), thetree[r].data(), thetree[r].count());
                 }
+        else
+            return removeHELPER(thetree[r].child(thetree[r] < d), d, s);
     }
     else
         return false;
@@ -256,24 +262,103 @@ bool bst<data_type>::removeHELPER (size_t& r, const data_type &d, size_t s)
 template <typename data_type>
 bool bst<data_type>::remove(const data_type &d, size_t s )
 {
-    return removeHELPER(thetree[0].child(0), d, s);
+    return removeHELPER(thetree[0].child(1), d, s);
 }
 
 template<typename data_type>
-void bst<data_type>::print(ostream& outs, size_t r)
+void bst<data_type>::print(ostream& outs, size_t r, size_t depth)
 {
     if (r)
     {
-        outs << thetree[r];
-        print (outs, thetree[r].child(0));
-        print (outs, thetree[r].child(1));
+        print (outs, thetree[r].child(0), depth + 4);
+        outs << setw(depth)<< thetree[r]<<endl;
+        print (outs, thetree[r].child(1), depth + 4);
     }
-
 }
 
-//bool balanced() const;
-//void balance();
+template <typename data_type>
+int bst<data_type>::depth (size_t r)
+{
 
+    if(r)
+        return 1 + max(depth(thetree[r].child(0)), depth(thetree[r].child(1)));
+    else
+        return 0;
+}
+
+template <typename data_type>
+bool bst<data_type>::balanced()
+{
+    return (abs(depth(thetree[root()].child(0)) - depth(thetree[root()].child(1))) <= 1);
+}
+
+template <typename data_type>
+void bst<data_type>::balance()
+{
+    int size = 0;
+    size_t dummy = 0;
+    tree_to_vine(dummy, size);
+    vine_to_tree(dummy, size);
+}
+
+template <typename data_type>
+void bst<data_type>::tree_to_vine ( size_t &root, int &size )
+{
+    size_t vineTail, remainder, tempPtr;
+    vineTail = root;
+    remainder = thetree[vineTail].child(1);
+    size = 0;
+    while ( remainder )
+    {
+        if ( !thetree[remainder].child(0) )
+        {
+            vineTail = remainder;
+            remainder = thetree[remainder].child(1);
+            size++;
+        }
+        else
+        {
+            tempPtr = thetree[remainder].child(0);
+            thetree[remainder].child(0) = thetree[tempPtr].child(1);
+            thetree[tempPtr].child(1) = remainder;
+            remainder = tempPtr;
+            thetree[vineTail].child(1) = tempPtr;
+        }
+    }
+}
+
+template<typename data_type>
+int bst<data_type>::FullSize (int size)
+{
+    int Rtn = 1;
+    while ( Rtn <= size )
+        Rtn = Rtn + Rtn + 1;
+    return Rtn/2;
+}
+
+template <typename data_type>
+void bst<data_type>::vine_to_tree ( size_t &root, int size )
+{
+    int full_count = FullSize (size);
+    compression(root, size - full_count);
+    for ( size = full_count ; size > 1 ; size /= 2 )
+        compression ( root, size / 2 );
+}
+
+template <typename data_type>
+void bst<data_type>::compression ( size_t &root, int count )
+{
+    size_t scanner = root;
+
+    for ( int j = 0; j < count; j++ )
+    {
+        size_t child = thetree[scanner].child(RIGHT);
+        thetree[scanner].child(RIGHT) = thetree[child].child(RIGHT);
+        scanner = thetree[scanner].child(RIGHT);
+        thetree[child].child(RIGHT) = thetree[scanner].child(LEFT);
+        thetree[scanner].child(LEFT) = child;
+    }
+}
 
 
 

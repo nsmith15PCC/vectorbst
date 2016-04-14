@@ -142,6 +142,7 @@ public:
     friend
     ostream& operator<<(ostream& outs, const node<D>& n);
 
+
 private:
     data_type thedata;
     size_t thecount, children[2];

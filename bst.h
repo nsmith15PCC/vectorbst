@@ -85,7 +85,7 @@ template <typename data_type>
 bst<data_type>::bst(TRAVERSAL_TYPE t)
 {
     thetraversal = t;
-    thetree = vector<node<data_type> >();
+    thetree.reserve(256);
     thetree.push_back(node<data_type>());
 }
 

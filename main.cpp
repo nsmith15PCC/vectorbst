@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include <set>
 #include "bst.h"
 
 using namespace std;
@@ -10,37 +11,16 @@ int main ()
     bst<int> thetree;
     srand(time(NULL));
 
-    for (unsigned int i = 0; i < 25; ++i)
+    for (unsigned int i = 0; i < 100000; ++i)
     {
-        int toinsert = rand()%10;
-        cout<<endl<<"Inserting "<<toinsert<<endl;
-        thetree.insert(toinsert);
-        thetree.print(cout,thetree.root());
+        thetree.insert(rand()%20000);
     }
-
-    cout<<"Finished inserting!"<<endl;
-    cout<<(thetree.balanced() ? "Balanced!" : "Not balanced!")<<endl;
-    if(!thetree.balanced())
+    for (int i = 0; i < 20000; ++i)
     {
-        cout<<"balancing!"<<endl;
-        thetree.balance();
-        thetree.print(cout, thetree.root());
-    }
-
-    for (int i = 0; i < 10; ++i)
-    {
-        cout<<endl<<"Removing "<<i<<endl;
-        thetree.remove(i, 10);
-        thetree.print(cout, thetree.root());
-        cout<<(thetree.balanced() ? "Balanced!" : "Not balanced!")<<endl;
-        if(!thetree.balanced())
-        {
-            cout<<"balancing!"<<endl;
-            thetree.balance();
-            thetree.print(cout, thetree.root());
-        }
+        thetree.remove(i,1000);
     }
 
     cout<<"Success!"<<endl;
+
     return 0;
 }
